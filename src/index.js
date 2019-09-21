@@ -9,15 +9,15 @@ export default class DelegateCenter {
     const validatorsMap = this.typesMap[type]
     // 事件委托
     document.addEventListener(type, e => {
-      this._runListeners(validatorsMap, e)
+      this._runExecFunction(validatorsMap, e, type)
     })
   }
 
-  _runListeners(validatorsMap, e) {
+  _runExecFunction(validatorsMap, e, type) {
     for (let validator of validatorsMap.keys()) {
       if (this._isMatchValidator(validator, e.target)) {
-        validatorsMap.get(validator).forEach(listener => {
-          listener(e)
+        validatorsMap.get(validator).forEach(execFunc => {
+          execFunc(e)
         })
       }
     }
@@ -105,7 +105,8 @@ export default class DelegateCenter {
       if (validator.exceptSelector) {
         isMisMatchExceptSelector = !this._isMatchSelector(
           validator.exceptSelector,
-          $node
+          $node,
+          true
         )
       } else {
         isMisMatchExceptSelector = true
@@ -120,35 +121,35 @@ export default class DelegateCenter {
    * 添加监听事件
    * @param {String} type 事件的类型，如'click'
    * @param {null, String, Array, Node, Object, Function} validator 验证器，支持多种类型验证
-   * @param {Function} listener 触发后执行的监听函数
+   * @param {Function} execFunc 触发后执行的函数
    */
-  add(type, validator, listener) {
+  add(type, validator, execFunc) {
     if (typeof type !== 'string' || !type) {
       throw 'Please make sure event type is valid!'
     }
     if (validator === undefined) {
       throw 'Please make sure validator is valid!'
     }
-    if (typeof listener !== 'function') {
-      throw 'Please make sure validator is a Function!'
+    if (typeof execFunc !== 'function') {
+      throw 'Please make sure execute Function is valid!'
     }
 
     if (!(type in this.typesMap)) {
       this._createEventType(type)
       let validatorsMap = this.typesMap[type]
-      validatorsMap.set(validator, [listener])
+      validatorsMap.set(validator, [execFunc])
     } else {
       let validatorsMap = this.typesMap[type]
       if (validatorsMap.has(validator)) {
-        validatorsMap.get(validator).push(listener)
+        validatorsMap.get(validator).push(execFunc)
       } else {
-        validatorsMap.set(validator, [listener])
+        validatorsMap.set(validator, [execFunc])
       }
     }
     return this
   }
 
-  remove(type, selector, listener) {
+  remove(type, validator, execFunc) {
     //判断是否存在该事件类型
     if (!(type in this.typesMap)) {
       return
@@ -157,19 +158,19 @@ export default class DelegateCenter {
     const validatorsMap = this.typesMap[type]
     //判断是否该事件类型是否存在触发元素和是否存在监听器
     if (
-      !validatorsMap.has(selector) ||
-      !validatorsMap.get(selector).length === 0
+      !validatorsMap.has(validator) ||
+      !validatorsMap.get(validator).length === 0
     ) {
       return
     }
 
     //判断是否存在指定监听器
-    const listenerArr = validatorsMap.get(selector)
-    let index = listenerArr.indexOf(listener)
+    const execFuncQueue = validatorsMap.get(validator)
+    let index = execFuncQueue.indexOf(execFunc)
     if (index >= 0) {
-      listenerArr.splice(index, 1)
-      if (listenerArr.length <= 0) {
-        validatorsMap.delete(selector)
+      execFuncQueue.splice(index, 1)
+      if (execFuncQueue.length <= 0) {
+        validatorsMap.delete(validator)
       }
       return this
     }
