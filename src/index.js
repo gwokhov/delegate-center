@@ -9,11 +9,11 @@ export default class DelegateCenter {
     const validatorsMap = this.typesMap[type]
     // 事件委托
     document.addEventListener(type, e => {
-      this._runExecFunction(validatorsMap, e, type)
+      this._runExecFunction(validatorsMap, e)
     })
   }
 
-  _runExecFunction(validatorsMap, e, type) {
+  _runExecFunction(validatorsMap, e) {
     for (let validator of validatorsMap.keys()) {
       if (this._isMatchValidator(validator, e.target)) {
         validatorsMap.get(validator).forEach(execFunc => {
@@ -26,36 +26,36 @@ export default class DelegateCenter {
   /**
    * 节点验证
    * @param {String, Array, Node} selector
-   * @param {*} $node 事件触发节点
+   * @param {Element} $ele 事件触发元素
    * @param {Boolean} isExcept 是否为排除验证器
    */
-  _isMatchSelector(selector, $node, isExcept = false) {
-    if (!$node) {
+  _isMatchSelector(selector, $ele, isExcept = false) {
+    if (!$ele) {
       return false
     }
 
     if (typeof selector === 'string') {
       if (/^\./.test(selector)) {
         const className = selector.replace(/^\./, '')
-        return $node.classList.contains(className)
+        return $ele.classList.contains(className)
       } else if (/^#/.test(selector)) {
         const id = selector.replace(/^#/, '')
-        return $node.id === id
+        return $ele.id === id
       } else {
         const tagName = selector.toUpperCase()
-        return $node.tagName === tagName
+        return $ele.tagName === tagName
       }
     }
 
-    if (selector instanceof Node) {
-      return $node.isSameNode(selector)
+    if (selector instanceof Element) {
+      return $ele.isSameNode(selector)
     }
 
     if (Array.isArray(selector) && selector.length > 0) {
       if (isExcept) {
-        return selector.some(s => this._isMatchSelector(s, $node))
+        return selector.some(s => this._isMatchSelector(s, $ele))
       } else {
-        return selector.every(s => this._isMatchSelector(s, $node))
+        return selector.every(s => this._isMatchSelector(s, $ele))
       }
     }
 
@@ -65,10 +65,10 @@ export default class DelegateCenter {
   /**
    * 类型验证
    * @param {null, String, Array, Node, Object, Function} validator 验证器
-   * @param {Node} $node 事件触发节点
+   * @param {Node} $ele 事件触发节点
    */
-  _isMatchValidator(validator, $node) {
-    if (validator === undefined || !$node) {
+  _isMatchValidator(validator, $ele) {
+    if (validator === undefined || !$ele) {
       return false
     }
 
@@ -81,7 +81,7 @@ export default class DelegateCenter {
       Array.isArray(validator) ||
       validator instanceof Node
     ) {
-      return this._isMatchSelector(validator, $node)
+      return this._isMatchSelector(validator, $ele)
     }
     //================自定义验证器================
     if (typeof validator === 'function') {
@@ -97,7 +97,7 @@ export default class DelegateCenter {
 
       // 判断是否匹配选择器
       if (validator.selector) {
-        isMatchSelector = this._isMatchSelector(validator.selector, $node)
+        isMatchSelector = this._isMatchSelector(validator.selector, $ele)
       } else {
         isMatchSelector = true
       }
@@ -105,7 +105,7 @@ export default class DelegateCenter {
       if (validator.exceptSelector) {
         isMisMatchExceptSelector = !this._isMatchSelector(
           validator.exceptSelector,
-          $node,
+          $ele,
           true
         )
       } else {
