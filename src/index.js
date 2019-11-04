@@ -1,9 +1,14 @@
 export default class DelegateCenter {
   constructor() {
     this.typesMap = Object.create(null)
+    this.matches = null
+    this._checkMatchesFunction()
   }
 
-  // 创建新的事件类型
+  /**
+   * 创建新的事件类型
+   * @param {String} type 事件类型
+   */
   _createEventType(type) {
     this.typesMap[type] = new Map()
     const validatorsMap = this.typesMap[type]
@@ -24,6 +29,26 @@ export default class DelegateCenter {
   }
 
   /**
+   * 检查是否支持原生选择器匹配方法
+   */
+  _checkMatchesFunction() {
+    const functionName = [
+      'matches',
+      'matchesSelector',
+      'mozMatchesSelector',
+      'msMatchesSelector',
+      'oMatchesSelector',
+      'webkitMatchesSelector'
+    ]
+    for (let i = 0, len = functionName.length; i < len; i++) {
+      if (functionName[i] in Element.prototype) {
+        this.matches = functionName[i]
+        return
+      }
+    }
+  }
+
+  /**
    * 节点验证
    * @param {String, Array, Node} selector
    * @param {Element} $ele 事件触发元素
@@ -35,15 +60,19 @@ export default class DelegateCenter {
     }
 
     if (typeof selector === 'string') {
-      if (/^\./.test(selector)) {
-        const className = selector.replace(/^\./, '')
-        return $ele.classList.contains(className)
-      } else if (/^#/.test(selector)) {
-        const id = selector.replace(/^#/, '')
-        return $ele.id === id
+      if (this.matches) {
+        return $ele[this.matches](selector)
       } else {
-        const tagName = selector.toUpperCase()
-        return $ele.tagName === tagName
+        if (/^\./.test(selector)) {
+          const className = selector.replace(/^\./, '')
+          return $ele.classList.contains(className)
+        } else if (/^#/.test(selector)) {
+          const id = selector.replace(/^#/, '')
+          return $ele.id === id
+        } else {
+          const tagName = selector.toUpperCase()
+          return $ele.tagName === tagName
+        }
       }
     }
 

@@ -1,6 +1,6 @@
 {
   "name": "delegate-center",
-  "version": "0.5.4",
+  "version": "0.6.5",
   "main": "dist/delegate-center.js",
   "author": "Gwokhov",
   "license": "MIT",
